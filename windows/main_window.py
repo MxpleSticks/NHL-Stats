@@ -31,7 +31,7 @@ class ClickableBannerLabel(QLabel):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("NHL Standings")
+        self.setWindowTitle("NHL Stats")
         self.resize(1000, 700)
 
         self.client = NHLClient()
