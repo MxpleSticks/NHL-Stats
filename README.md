@@ -57,6 +57,8 @@ pip install -r requirements.txt
 ```
 NHL Stats/
 ├── main.py                          # Application entry point
+├── requirements.txt                 # Python dependencies
+├── delegates.py                     # Custom table delegates
 ├── windows/
 │   ├── __init__.py
 │   ├── main_window.py               # Main standings window
@@ -69,9 +71,10 @@ NHL Stats/
 │   ├── prediction_window.py        # Daily picks tracker
 │   ├── web_windows.py               # External web viewers
 │   └── games_windows.py             # Game window exports
-├── delegates.py                     # Custom table delegates
 └── README.md                        # This file
 ```
+
+*Note: `__pycache__` directories are excluded from this structure*
 
 ## Usage
 
