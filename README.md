@@ -4,9 +4,9 @@ A comprehensive PyQt6-based desktop application for tracking NHL standings, game
 
 ## Video Demo
 
-[![NHL Stats Demo](https://img.youtube.com/vi/gj7IIWxhfhE/0.jpg)](https://youtu.be/gj7IIWxhfhE)
+[![NHL Stats Demo](https://img.youtube.com/vi/vzVyN5AOvEU/0.jpg)](https://youtu.be/vzVyN5AOvEU)
 
-**[Watch the full demo on YouTube](https://youtu.be/gj7IIWxhfhE)**
+**[Watch the full demo on YouTube](https://youtu.be/vzVyN5AOvEU)**
 
 ## Features
 
