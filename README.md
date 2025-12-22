@@ -2,6 +2,12 @@
 
 A comprehensive PyQt6-based desktop application for tracking NHL standings, games, and statistics with real-time updates.
 
+## Video Demo
+
+[![NHL Stats Demo](https://img.youtube.com/vi/gj7IIWxhfhE/0.jpg)](https://youtu.be/gj7IIWxhfhE)
+
+**[Watch the full demo on YouTube](https://youtu.be/gj7IIWxhfhE)**
+
 ## Features
 
 - **Live Standings**: View current NHL standings with sortable columns and team comparisons
@@ -60,24 +66,6 @@ Download a pre-built Windows executable from the **Releases** page:
    python main.py
    ```
 
-### Library Details
-
-- **PyQt6** (>=6.0.0): Main GUI framework
-- **PyQt6-WebEngine** (>=6.0.0): For embedded web views (game details, external sites)
-- **nhlpy** (>=0.5.0): NHL API client for fetching game data and standings
-
-## Installation
-
-1. Clone or download this repository
-2. Install the required dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Run the application:
-   ```bash
-   python main.py
-   ```
-   
 ## Usage
 
 ### Main Window
