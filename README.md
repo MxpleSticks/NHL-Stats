@@ -101,7 +101,7 @@ Download a pre-built Windows executable from the **Releases** page:
 - Track your accuracy over time with detailed statistics
 - View monthly breakdown and current winning streak
 
-### Resources
+### Discussion/Resources
 - LINKS for days
 
 ## Data Storage
