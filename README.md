@@ -51,31 +51,7 @@ pip install -r requirements.txt
    ```bash
    python main.py
    ```
-
-## File Structure
-
-```
-NHL Stats/
-├── main.py                          # Application entry point
-├── requirements.txt                 # Python dependencies
-├── delegates.py                     # Custom table delegates
-├── windows/
-│   ├── __init__.py
-│   ├── main_window.py               # Main standings window
-│   ├── game_details_window.py      # Individual game details
-│   ├── todays_games_window.py      # Today's games summary
-│   ├── upcoming_window.py           # Upcoming games list
-│   ├── past_games_window.py        # Historical games
-│   ├── comparison_window.py        # Date comparison dialog
-│   ├── team_matchup_window.py      # Team vs team predictor
-│   ├── prediction_window.py        # Daily picks tracker
-│   ├── web_windows.py               # External web viewers
-│   └── games_windows.py             # Game window exports
-└── README.md                        # This file
-```
-
-*Note: `__pycache__` directories are excluded from this structure*
-
+   
 ## Usage
 
 ### Main Window
@@ -111,6 +87,9 @@ NHL Stats/
 - Assign confidence levels (1-5) to your picks
 - Track your accuracy over time with detailed statistics
 - View monthly breakdown and current winning streak
+
+### Resources
+- LINKS for days
 
 ## Data Storage
 
@@ -150,4 +129,4 @@ This project is for personal use only. NHL data and trademarks are property of t
 
 ## Version
 
-Current Version: 1.0.0
+Current Version: 1.1.0
