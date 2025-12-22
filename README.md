@@ -15,24 +15,50 @@ A comprehensive PyQt6-based desktop application for tracking NHL standings, game
 - **External Links**: Quick access to MoneyPuck, NHL.com, TSN, and streaming sites
 - **Playoff Tracker**: See which teams would make playoffs if the season ended today
 
-## Requirements
+## Installation
 
-### Python Version
+### Option 1: Windows Executable (No Python Required)
+
+Download a pre-built Windows executable from the **Releases** page:
+- Download **NHL-Stats.exe**
+- No Python or dependencies required
+- Just run the executable to start the app
+
+### Option 2: Run from Source (All Platforms)
+
+#### Requirements
 - Python 3.8 or higher
+- pip (Python package installer)
 
-### Required Libraries
+#### Required Libraries
+- **PyQt6** (>=6.0.0): Main GUI framework
+- **PyQt6-WebEngine** (>=6.0.0): For embedded web views (game details, external sites)
+- **nhlpy** (>=0.5.0): NHL API client for fetching game data and standings
 
-Install all dependencies using pip:
+#### Installation Steps
 
-```bash
-pip install PyQt6 PyQt6-WebEngine nhlpy
-```
+1. **Clone or download this repository**
+   ```bash
+   git clone <repository-url>
+   cd nhl-stats
+   ```
 
-Or use the requirements file:
+2. **Install dependencies**
+   
+   Using requirements.txt (recommended):
+   ```bash
+   pip install -r requirements.txt
+   ```
+   
+   Or install manually:
+   ```bash
+   pip install PyQt6 PyQt6-WebEngine nhlpy
+   ```
 
-```bash
-pip install -r requirements.txt
-```
+3. **Run the application**
+   ```bash
+   python main.py
+   ```
 
 ### Library Details
 
