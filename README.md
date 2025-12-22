@@ -80,7 +80,6 @@ pip install -r requirements.txt
 - Click matchups in any view to open detailed game information
 - Live games auto-refresh every 5 seconds
 - Access external sites (MoneyPuck, NHL.com, TSN) with one click
-- Stream games directly via the "STREAM NOW" button
 
 ### Daily Picks
 - Make predictions for each game's winner
