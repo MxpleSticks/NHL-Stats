@@ -264,7 +264,6 @@ class DiscussionWindow(QWidget):
                 "PuckPedia": ("https://puckpedia.com/", 5),
                 "Daily Faceoff": ("https://www.dailyfaceoff.com/", 5),
                 "Spotrac": ("https://www.spotrac.com/nhl/", 4),
-                "Left Wing Lock": ("https://leftwinglock.com/", 4),
                 "Dobber Hockey": ("https://dobberhockey.com/", 4)
             }, 3)
         ]
