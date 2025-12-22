@@ -6,8 +6,9 @@ from PyQt6.QtWidgets import (
     QLabel, QMainWindow, QScrollArea, QTableWidget, QTableWidgetItem,
     QVBoxLayout, QWidget, QAbstractItemView, QHeaderView, QPushButton, QHBoxLayout
 )
-from PyQt6.QtCore import Qt, QTimer, pyqtSignal
-from PyQt6.QtGui import QColor
+from PyQt6.QtCore import Qt, QTimer, pyqtSignal, QUrl
+from PyQt6.QtGui import QColor, QPixmap
+from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from nhlpy import NHLClient
 from delegates import FavoriteDelegate
 from .web_windows import TeamLinesWindow, PlayoffWindow
@@ -35,6 +36,8 @@ class MainWindow(QMainWindow):
         self.resize(1000, 700)
 
         self.client = NHLClient()
+        self.network_manager = QNetworkAccessManager()
+        
         current_date = datetime.date.today().isoformat()
         self.standings = self.client.standings.league_standings(date=current_date)["standings"]
         self.original_standings = list(self.standings)
@@ -171,6 +174,11 @@ class MainWindow(QMainWindow):
         font.setPointSize(8)
         self.compare_button.setFont(font)
         button_layout.addWidget(self.compare_button)
+
+        # Add Discussions/Commentators button
+        self.discussion_button = QPushButton("Discussions")
+        self.discussion_button.clicked.connect(self.open_discussion_window)
+        button_layout.addWidget(self.discussion_button)
 
         layout.addLayout(button_layout)
 
@@ -353,12 +361,12 @@ class MainWindow(QMainWindow):
         bar.setValue(next_value)
 
     def update_table_columns(self):
-        basic_headers = ["Rank", "Team", "GP", "W", "L", "OT", "Pts", "ROW", "P%", "GF", "GA", "DIFF", "HOME", "ROAD", "L10", "STREAK", "Last", "Playoffs"]
+        basic_headers = ["Rank", "Logo", "Team", "GP", "W", "L", "OT", "Pts", "ROW", "P%", "GF", "GA", "DIFF", "HOME", "ROAD", "L10", "STREAK", "Last", "Playoffs"]
         advanced_headers = ["RW", "SOW", "SOL", "Conf", "Div", "Wild"]
         headers = basic_headers + advanced_headers if self.advanced_mode else basic_headers
 
         basic_tooltips = [
-            "League Rank", "Team Abbreviation", "Games Played", "Wins", "Losses",
+            "League Rank", "Team Logo", "Team Abbreviation", "Games Played", "Wins", "Losses",
             "Overtime Losses", "Points", "Regulation + OT Wins", "Point Percentage",
             "Goals For", "Goals Against", "Goal Differential",
             "Home Record (W-L-OT)", "Road Record (W-L-OT)", "Last 10 Games (W-L-OT)", "Current Streak",
@@ -383,17 +391,22 @@ class MainWindow(QMainWindow):
 
         # Enable tooltips for header
         self.table.horizontalHeader().setToolTip("")
+        
+        # Adjust column widths: make Rank and Logo small
+        self.table.setColumnWidth(0, 40)  # Rank
+        self.table.setColumnWidth(1, 40)  # Logo
 
     def handle_item_click(self, item):
         if item.column() == 0:  # Rank column - toggle favorite
-            abbrev = self.table.item(item.row(), 1).text()
+            # Need to get team abbrev from column 2 now
+            abbrev = self.table.item(item.row(), 2).text()
             if abbrev in self.favorite_teams:
                 self.favorite_teams.remove(abbrev)
             else:
                 self.favorite_teams.add(abbrev)
             self.populate_table(refresh_banner=False)
             self.update_sort_indicator()
-        elif item.column() == 1:  # Team column - view players
+        elif item.column() == 2:  # Team column - view players
             full_name = item.toolTip().lower()
             full_name = full_name.replace("é", "e").replace(".", "")
             full_name = full_name.replace(" ", "-")
@@ -402,10 +415,54 @@ class MainWindow(QMainWindow):
             self.team_lines_window = TeamLinesWindow(url)
             self.team_lines_window.show()
         elif self.last_game_col != -1 and item.column() == self.last_game_col:
-            team_item = self.table.item(item.row(), 1)
+            team_item = self.table.item(item.row(), 2)
             if team_item:
                 abbrev = team_item.text()
                 self.open_team_last_game(abbrev)
+
+    def load_logo(self, abbrev, label_widget):
+        # Map NHL API abbreviations (Keys) to ESPN URL codes (Values)
+        espn_mapping = {
+            "LAK": "la",    # Los Angeles Kings
+            "TBL": "tb",    # Tampa Bay Lightning
+            "NJD": "nj",    # New Jersey Devils
+            "SJS": "sj",    # San Jose Sharks
+            "UTA": "utah",  # Utah Hockey Club
+            "VEG": "vgk"    # Vegas sometimes varies
+        }
+
+        if abbrev in espn_mapping:
+            abbrev = espn_mapping[abbrev]
+        
+        url = f"https://assets.espn.go.com/i/teamlogos/nhl/500/{abbrev}.png"
+        request = QNetworkRequest(QUrl(url))
+        reply = self.network_manager.get(request)
+        # Use lambda to pass both the reply and the widget to the callback
+        # Explicitly capturing variables (r=reply, w=label_widget) is safer
+        reply.finished.connect(lambda r=reply, w=label_widget: self.on_logo_loaded(r, w))
+
+    def on_logo_loaded(self, reply, label_widget):
+        try:
+            # Check if reply and widget are still valid and no error occurred
+            if reply.error() == reply.NetworkError.NoError:
+                data = reply.readAll()
+                pixmap = QPixmap()
+                pixmap.loadFromData(data)
+                if not pixmap.isNull():
+                    # Ensure label_widget is still valid before setting pixmap
+                    label_widget.setPixmap(pixmap)
+                else:
+                    label_widget.setText("IMG ERR")
+                    label_widget.setStyleSheet("font-size: 8px; color: red;")
+            else:
+                label_widget.setText("ERR")
+                label_widget.setStyleSheet("font-size: 8px; color: red;")
+            
+            reply.deleteLater()
+        except RuntimeError:
+            # This catches "wrapped C/C++ object has been deleted"
+            # If the widget or reply was destroyed (e.g., table refreshed), just ignore.
+            pass
 
     def open_todays_games(self):
         self.todays_window = TodaysGamesWindow()
@@ -426,6 +483,18 @@ class MainWindow(QMainWindow):
     def open_comparison_window(self):
         dialog = ComparisonWindow(self)
         dialog.exec()
+
+    def open_discussion_window(self):
+        """Open the Discussion/Commentator window."""
+        try:
+            # We import here so we don't crash if the file isn't created yet
+            from .discussion import DiscussionWindow
+            self.discussion_window = DiscussionWindow()
+            self.discussion_window.show()
+        except ImportError:
+            print("Discussion window code (discussion.py) is not yet created.")
+        except Exception as e:
+            print(f"Error opening discussion window: {e}")
 
     def open_team_last_game(self, team_abbrev):
         """Open the most recent completed game for the provided team."""
@@ -547,14 +616,14 @@ class MainWindow(QMainWindow):
         """Set the date to compare against"""
         self.comparison_date = ranks_dict
         self.comparison_stats = stats_dict
-        self.populate_table()
+        self.populate_table(refresh_banner=False)
         self.update_sort_indicator()
 
     def reset_comparison(self):
         """Reset to default 2-day comparison"""
         self.comparison_date = None
         self.comparison_stats = None
-        self.populate_table()
+        self.populate_table(refresh_banner=False)
         self.update_sort_indicator()
 
     def get_rainbow_color(self, offset):
@@ -732,78 +801,94 @@ class MainWindow(QMainWindow):
                     rank_item.setToolTip(f"{prev_rank} → {current_rank}")
             self.table.setItem(row, 0, rank_item)
             
+            # --- New Logo Column (Index 1) ---
+            logo_label = QLabel()
+            logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            logo_label.setScaledContents(True)
+            logo_label.setFixedSize(25, 25) # Small fixed size for table row
+            
+            # Create a container widget to center the label in the cell
+            container_widget = QWidget()
+            container_layout = QHBoxLayout(container_widget)
+            container_layout.setContentsMargins(0, 0, 0, 0)
+            container_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            container_layout.addWidget(logo_label)
+            
+            self.load_logo(abbrev, logo_label)
+            self.table.setCellWidget(row, 1, container_widget)
+            
             if abbrev in self.favorite_teams:
                 favorite_rows.add(row)
 
             team_item = QTableWidgetItem(abbrev)
             team_item.setToolTip(full_name)
-            self.table.setItem(row, 1, team_item)
+            self.table.setItem(row, 2, team_item)
 
-            self.table.setItem(row, 2, QTableWidgetItem(str(team.get("gamesPlayed", 0))))
+            self.table.setItem(row, 3, QTableWidgetItem(str(team.get("gamesPlayed", 0))))
             
-            # Wins (column 3) - higher is better
+            # Wins (column 4) - higher is better
             wins_item = QTableWidgetItem(str(team.get("wins", 0)))
             wins_color, wins_compare = self.get_stat_color(abbrev, "wins", team.get("wins", 0), higher_is_better=True)
             if wins_color and wins_compare is not None:
                 wins_item.setForeground(wins_color)
                 wins_item.setToolTip(f"{wins_compare} → {team.get('wins', 0)}")
-            self.table.setItem(row, 3, wins_item)
+            self.table.setItem(row, 4, wins_item)
             
-            self.table.setItem(row, 4, QTableWidgetItem(str(team.get("losses", 0))))
-            self.table.setItem(row, 5, QTableWidgetItem(str(team.get("otLosses", 0))))
+            self.table.setItem(row, 5, QTableWidgetItem(str(team.get("losses", 0))))
+            self.table.setItem(row, 6, QTableWidgetItem(str(team.get("otLosses", 0))))
             
-            # Points (column 6) - higher is better
+            # Points (column 7) - higher is better
             points_item = QTableWidgetItem(str(team.get("points", 0)))
             points_color, points_compare = self.get_stat_color(abbrev, "points", team.get("points", 0), higher_is_better=True)
             if points_color and points_compare is not None:
                 points_item.setForeground(points_color)
                 points_item.setToolTip(f"{points_compare} → {team.get('points', 0)}")
-            self.table.setItem(row, 6, points_item)
+            self.table.setItem(row, 7, points_item)
             
-            self.table.setItem(row, 7, QTableWidgetItem(str(team.get("regulationPlusOtWins", 0))))
+            self.table.setItem(row, 8, QTableWidgetItem(str(team.get("regulationPlusOtWins", 0))))
             
-            # Point Percentage (column 8) - higher is better
+            # Point Percentage (column 9) - higher is better
             pctg_value = team.get('pointPctg', 0.0)
             pctg_item = QTableWidgetItem(f"{pctg_value:.3f}")
             pctg_color, pctg_compare = self.get_stat_color(abbrev, "pointPctg", pctg_value, higher_is_better=True)
             if pctg_color and pctg_compare is not None:
                 pctg_item.setForeground(pctg_color)
                 pctg_item.setToolTip(f"{pctg_compare:.3f} → {pctg_value:.3f}")
-            self.table.setItem(row, 8, pctg_item)
+            self.table.setItem(row, 9, pctg_item)
             
-            # Goals For (column 9) - higher is better
+            # Goals For (column 10) - higher is better
             gf_item = QTableWidgetItem(str(team.get("goalFor", 0)))
             gf_color, gf_compare = self.get_stat_color(abbrev, "goalFor", team.get("goalFor", 0), higher_is_better=True)
             if gf_color and gf_compare is not None:
                 gf_item.setForeground(gf_color)
                 gf_item.setToolTip(f"{gf_compare} → {team.get('goalFor', 0)}")
-            self.table.setItem(row, 9, gf_item)
+            self.table.setItem(row, 10, gf_item)
             
-            # Goals Against (column 10) - lower is better
+            # Goals Against (column 11) - lower is better
             ga_item = QTableWidgetItem(str(team.get("goalAgainst", 0)))
             ga_color, ga_compare = self.get_stat_color(abbrev, "goalAgainst", team.get("goalAgainst", 0), higher_is_better=False)
             if ga_color and ga_compare is not None:
                 ga_item.setForeground(ga_color)
                 ga_item.setToolTip(f"{ga_compare} → {team.get('goalAgainst', 0)}")
-            self.table.setItem(row, 10, ga_item)
+            self.table.setItem(row, 11, ga_item)
             
-            # Goal Differential (column 11) - higher is better
+            # Goal Differential (column 12) - higher is better
             diff_item = QTableWidgetItem(str(team.get("goalDifferential", 0)))
             diff_color, diff_compare = self.get_stat_color(abbrev, "goalDifferential", team.get("goalDifferential", 0), higher_is_better=True)
             if diff_color and diff_compare is not None:
                 diff_item.setForeground(diff_color)
                 diff_item.setToolTip(f"{diff_compare} → {team.get('goalDifferential', 0)}")
-            self.table.setItem(row, 11, diff_item)
+            self.table.setItem(row, 12, diff_item)
             home_record = f"{team.get('homeWins',0)}-{team.get('homeLosses',0)}-{team.get('homeOtLosses',0)}"
-            self.table.setItem(row, 12, QTableWidgetItem(home_record))
+            self.table.setItem(row, 13, QTableWidgetItem(home_record))
             road_record = f"{team.get('roadWins',0)}-{team.get('roadLosses',0)}-{team.get('roadOtLosses',0)}"
-            self.table.setItem(row, 13, QTableWidgetItem(road_record))
+            self.table.setItem(row, 14, QTableWidgetItem(road_record))
             l10_record = f"{team.get('l10Wins',0)}-{team.get('l10Losses',0)}-{team.get('l10OtLosses',0)}"
-            self.table.setItem(row, 14, QTableWidgetItem(l10_record))
+            self.table.setItem(row, 15, QTableWidgetItem(l10_record))
             streak_code = team.get("streakCode", "")
             streak_count = team.get("streakCount", 0)
             streak = f"{streak_code}{streak_count}" if streak_count else ""
-            self.table.setItem(row, 15, QTableWidgetItem(streak))
+            self.table.setItem(row, 16, QTableWidgetItem(streak))
 
             # Last game result column
             if self.last_game_col != -1:
@@ -857,6 +942,7 @@ class MainWindow(QMainWindow):
     def get_sort_key(self, col):
         basic_keys = [
             lambda t: int(t.get("leagueSequence", 999)),
+            lambda t: t.get("teamAbbrev", {}).get("default", "").lower(), # Sort by team abbrev for Logo column
             lambda t: t.get("teamAbbrev", {}).get("default", "").lower(),
             lambda t: int(t.get("gamesPlayed", 0)),
             lambda t: int(t.get("wins", 0)),
@@ -912,4 +998,3 @@ class MainWindow(QMainWindow):
             order = Qt.SortOrder.AscendingOrder if self.current_sort_order == 1 else Qt.SortOrder.DescendingOrder
             header.setSortIndicator(self.current_sort_col, order)
             header.setSortIndicatorShown(True)
-
