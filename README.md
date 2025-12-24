@@ -44,27 +44,27 @@ Download a pre-built Windows executable from the **Releases** page:
 #### Installation Steps
 
 1. **Clone or download this repository**
-   ```bash
-   git clone <repository-url>
-   cd nhl-stats
-   ```
+```bash
+   git clone https://github.com/MxpleSticks/NHL-Stats.git
+   cd NHL-Stats
+```
 
 2. **Install dependencies**
    
    Using requirements.txt (recommended):
-   ```bash
+```bash
    pip install -r requirements.txt
-   ```
+```
    
    Or install manually:
-   ```bash
+```bash
    pip install PyQt6 PyQt6-WebEngine nhlpy
-   ```
+```
 
 3. **Run the application**
-   ```bash
+```bash
    python main.py
-   ```
+```
 
 ## Usage
 
@@ -110,11 +110,16 @@ The app stores user data in your home directory:
 - **Favorites**: `~/.nhl_favorites.json`
 - **Predictions**: `~/.nhl_predictions.json`
 
-## Known Limitations
+## Known Issues
 
+- **Windows 10 Theme Compatibility**: UI rendering may look slightly different on Windows 10 due to theme compatibility. All functionality works correctly. This is a known limitation of PyQt6 cross-version compatibility.
 - Requires active internet connection for live data
 - API rate limits may apply during heavy usage
 - Historical data fetching can take 10-30 seconds for full season
+
+## Project Status
+
+This project is **feature complete**. Only critical bug fixes will be released. Feature requests will not be accepted at this time.
 
 ## Troubleshooting
 
